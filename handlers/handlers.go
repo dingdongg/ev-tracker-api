@@ -45,15 +45,11 @@ func UpdatePokemonHandler(w http.ResponseWriter, r *http.Request) {
 
 	addHeaders(w)
 
-	dao, err := db.LoginDB()
-	if err != nil {
-		w.Write([]byte(`{"message":"Error logging into DB"}`))
-		log.Fatal("CANT LOGIN", err)
-	}
+	dao := db.Db
 	var body PokemonUpdateRequest
 
 	jsonDecoder := json.NewDecoder(r.Body)
-	err = jsonDecoder.Decode(&body)
+	err := jsonDecoder.Decode(&body)
 	if err != nil {
 		log.Fatal("CANT READ REQ BODY", err)
 	}
@@ -93,12 +89,7 @@ func FetchPokemonHandler(w http.ResponseWriter, r *http.Request) {
 
 	addHeaders(w)
 
-	dao, err := db.LoginDB()
-	if err != nil {
-		w.Write([]byte(`{"message":"Error logging into DB"}`))
-		log.Fatal("CANT LOGIN", err)
-	}
-
+	dao := db.Db
 	pokemonName := r.URL.Query().Get("pokemon")
 
 	res, err := dao.Query("SELECT * FROM pokemons where name = $1", pokemonName)
