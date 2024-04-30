@@ -12,14 +12,14 @@ import (
 )
 
 type Pokemon struct {
-	Id		string
-	Name	string
-	Hp 		uint
-	Atk		uint	
-	Def 	uint
-	Spa		uint
-	Spd		uint
-	Spe		uint
+	Id		string	`json:"id"`
+	Name	string	`json:"name"`
+	Hp 		uint	`json:"hp"`
+	Atk		uint	`json:"atk"`
+	Def 	uint	`json:"def"`
+	Spa		uint	`json:"spa"`
+	Spd		uint	`json:"spd"`
+	Spe		uint	`json:"spe"`
 }
 
 func addHeaders(w http.ResponseWriter) {
@@ -66,17 +66,11 @@ func FetchPokemonHandler(w http.ResponseWriter, r *http.Request) {
 	var pokemons []Pokemon
 	for res.Next() {
 		var p Pokemon
-		if err := res.Scan(&p.Id, &p.Name, &p.Hp, &p.Atk, &p.Def, &p.Spa, &p.Spd, &p.Spe); err != nil {
-			json.NewEncoder(w).Encode(pokemons)
-			log.Fatal(err)
-			return
+		err = res.Scan(&p.Id, &p.Name, &p.Hp, &p.Atk, &p.Def, &p.Spa, &p.Spd, &p.Spe)
+		if err != nil {
+			break
 		}
 		pokemons = append(pokemons, p)
-	}
-	if err = res.Err(); err != nil {
-		json.NewEncoder(w).Encode(pokemons)
-		log.Fatal(err)
-		return
 	}
 
 	json.NewEncoder(w).Encode(pokemons)
