@@ -8,7 +8,7 @@ CREATE TABLE pokemons (
     sp_defense  int,
     speed       int,
     PRIMARY KEY (id)
-)
+);
 
 -- insert example value into the above table
-INSERT INTO pokemons VALUES (gen_random_uuid(), "gengar", 0, 0, 0, 252, 6, 252)
+INSERT INTO pokemons VALUES (gen_random_uuid(), 'gengar', 0, 0, 0, 252, 6, 252);
