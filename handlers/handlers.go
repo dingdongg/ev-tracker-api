@@ -1,10 +1,13 @@
 package handlers
 
 import (
-	"database/sql"
-	"encoding/json"
+	// "encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	// "os"
+
+	"ev-tracker/src/db"
 
 	_ "github.com/lib/pq"
 )
@@ -27,19 +30,19 @@ func FetchPokemonHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Origin", "http://localhost:5173")
 	w.Header().Add("Content-Type", "application/json")
 
-	db, err := sql.Open("postgres", "user=admin dbname=evtracker sslmode=disable")
+	dao, err := db.LoginDB()
 	if err != nil {
-		w.Write([]byte(`{"message":"ERROR: invalid request"}`))
-		log.Fatal("cANTLOGIN", err)
+		w.Write([]byte(`{"message":"Error logging into DB"}`))
+		log.Fatal("CANT LOGIN", err)
 	}
 
-	values := r.URL.Query()
-	pokemon := values.Get("pokemon")
-	results, err := db.Query("SELECT * from pokemons WHERE name = $1", pokemon)
+	res, err := dao.Query("SELECT * FROM pokemons")
 	if err != nil {
-		w.Write([]byte(`{"message":"ERROR: invalid request"}`))
-		log.Fatal("FAILED QUERY", err)
+		w.Write([]byte(`{"message":"Error fetching from table"}`))
+		// read in init.sql to memory and run it
+		log.Fatal("CANT FETCH", err)
 	}
 
-	json.NewEncoder(w).Encode(results)
+	fmt.Println(res)
+	w.Write([]byte(`{"message":"Success"}`))
 }
