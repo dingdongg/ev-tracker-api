@@ -37,9 +37,6 @@ func FetchPokemonHandler(w http.ResponseWriter, r *http.Request) {
 
 	addHeaders(w)
 
-	w.Header().Add("Access-Control-Allow-Origin", "http://localhost:5173")
-	w.Header().Add("Content-Type", "application/json")
-
 	dao, err := db.LoginDB()
 	if err != nil {
 		w.Write([]byte(`{"message":"Error logging into DB"}`))
