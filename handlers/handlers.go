@@ -1,16 +1,26 @@
 package handlers
 
 import (
-	// "encoding/json"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	// "os"
+	"os"
 
 	"ev-tracker/src/db"
-
 	_ "github.com/lib/pq"
 )
+
+type Pokemon struct {
+	Id		string
+	Name	string
+	Hp 		uint
+	Atk		uint	
+	Def 	uint
+	Spa		uint
+	Spd		uint
+	Spe		uint
+}
 
 func addHeaders(w http.ResponseWriter) {
 	w.Header().Add("Access-Control-Allow-Origin", "http://localhost:5173")
@@ -38,11 +48,36 @@ func FetchPokemonHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := dao.Query("SELECT * FROM pokemons")
 	if err != nil {
-		w.Write([]byte(`{"message":"Error fetching from table"}`))
 		// read in init.sql to memory and run it
-		log.Fatal("CANT FETCH", err)
+		file, err := os.ReadFile("init.sql")
+		if err != nil {
+			fmt.Println(">>>>>?????")
+			log.Fatal(err)
+		}
+
+		fileString := string(file[:])
+		_, err = dao.Exec(fileString)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	defer res.Close()
+	
+	var pokemons []Pokemon
+	for res.Next() {
+		var p Pokemon
+		if err := res.Scan(&p.Id, &p.Name, &p.Hp, &p.Atk, &p.Def, &p.Spa, &p.Spd, &p.Spe); err != nil {
+			json.NewEncoder(w).Encode(pokemons)
+			log.Fatal(err)
+			return
+		}
+		pokemons = append(pokemons, p)
+	}
+	if err = res.Err(); err != nil {
+		json.NewEncoder(w).Encode(pokemons)
+		log.Fatal(err)
+		return
 	}
 
-	fmt.Println(res)
-	w.Write([]byte(`{"message":"Success"}`))
+	json.NewEncoder(w).Encode(pokemons)
 }
