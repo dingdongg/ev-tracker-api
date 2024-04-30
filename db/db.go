@@ -7,9 +7,12 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
-func LoginDB() (*sql.DB, error) {
+var Db *sql.DB = loginDB()
+
+func loginDB() *sql.DB {
 	// get DB credentials from env file
 	err := godotenv.Load()
 	if err != nil {
@@ -25,5 +28,10 @@ func LoginDB() (*sql.DB, error) {
 	fmt.Println(sql.Drivers())
 
 	// maybe implement DAO pattern? (look into this mroe)
-	return sql.Open("postgres", dataSource)
+	ret, err := sql.Open("postgres", dataSource)
+	if err != nil {
+		log.Fatal("Error loggin into DB ", err)
+	}
+
+	return ret
 }
