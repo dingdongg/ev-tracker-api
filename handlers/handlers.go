@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -120,4 +122,29 @@ func FetchPokemonHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(pokemons)
+}
+
+func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		w.Write([]byte(`{"message":"ERROR: invalid request"}`))
+		return
+	}
+
+	addHeaders(w)
+
+	r.ParseMultipartForm(1 << 19)
+	var buf bytes.Buffer
+
+	file, header, err := r.FormFile("savefile")
+	if err != nil {
+		fmt.Println("BRUH ", err)
+		return
+	}
+	defer file.Close()
+	
+	fmt.Printf("filename: %s\n", header.Filename)
+	io.Copy(&buf, file)
+
+	fmt.Printf("% x\n", buf)
+	w.Write([]byte(`{"message": "Success reading savefile"}`))
 }
