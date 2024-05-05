@@ -11,10 +11,13 @@ import (
 
 	"ev-tracker/src/db"
 	_ "github.com/lib/pq"
+
+	ROMparser "github.com/dingdongg/pkmn-platinum-rom-parser"
 )
 
-type Pokemon struct {
+type PokemonResponse struct {
 	Id		string	`json:"id"`
+	Level 	uint 	`json:"level"`
 	Name	string	`json:"name"`
 	Hp 		uint	`json:"hp"`
 	Atk		uint	`json:"atk"`
@@ -111,9 +114,9 @@ func FetchPokemonHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer res.Close()
 	
-	var pokemons []Pokemon
+	var pokemons []PokemonResponse
 	for res.Next() {
-		var p Pokemon
+		var p PokemonResponse
 		err = res.Scan(&p.Id, &p.Name, &p.Hp, &p.Atk, &p.Def, &p.Spa, &p.Spd, &p.Spe)
 		if err != nil {
 			break
@@ -124,8 +127,9 @@ func FetchPokemonHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(pokemons)
 }
 
+// return all party pokemon info in JSON format 
 func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
+	if r.Method != "POST" {
 		w.Write([]byte(`{"message":"ERROR: invalid request"}`))
 		return
 	}
@@ -145,6 +149,22 @@ func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("filename: %s\n", header.Filename)
 	io.Copy(&buf, file)
 
-	fmt.Printf("% x\n", buf)
-	w.Write([]byte(`{"message": "Success reading savefile"}`))
+	results := ROMparser.Parse(buf.Bytes())
+	var res []PokemonResponse
+
+	for _, p := range results {
+		res = append(res, PokemonResponse{
+			"",
+			p.Level,
+			p.Name,
+			p.EffortValues.Hp,
+			p.EffortValues.Attack,
+			p.EffortValues.Defense,
+			p.EffortValues.SpAttack,
+			p.EffortValues.SpDefense,
+			p.EffortValues.Speed,
+		})
+	}
+
+	json.NewEncoder(w).Encode(res)
 }
