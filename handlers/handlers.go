@@ -7,24 +7,32 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
-
+	"strconv"
 	"ev-tracker/src/db"
-	_ "github.com/lib/pq"
 
+	_ "github.com/lib/pq"
 	ROMparser "github.com/dingdongg/pkmn-platinum-rom-parser"
 )
 
+type StatResponse struct {
+	Hp 			uint	`json:"hp"`
+	Atk			uint	`json:"atk"`
+	Def 		uint	`json:"def"`
+	Spa			uint	`json:"spa"`
+	Spd			uint	`json:"spd"`
+	Spe			uint	`json:"spe"`
+}
+
 type PokemonResponse struct {
-	Id		string	`json:"id"`
-	Level 	uint 	`json:"level"`
-	Name	string	`json:"name"`
-	Hp 		uint	`json:"hp"`
-	Atk		uint	`json:"atk"`
-	Def 	uint	`json:"def"`
-	Spa		uint	`json:"spa"`
-	Spd		uint	`json:"spd"`
-	Spe		uint	`json:"spe"`
+	Id			string	`json:"id"`
+	SpriteUrl	string	`json:"spriteUrl"`
+	Level 		uint 	`json:"level"`
+	Name		string	`json:"name"`
+	Ability 	string 	`json:"ability"`
+	HeldItem 	string	`json:"heldItem"`
+	Nature		string	`json:"nature"`
+	EffortValues StatResponse	`json:"effortValues"`
+	BaseStats	 StatResponse	`json:"baseStats"`
 }
 
 type PokemonUpdateRequest struct {
@@ -84,49 +92,6 @@ func UpdatePokemonHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"message":"Success"}`))
 }
 
-func FetchPokemonHandler(w http.ResponseWriter, r *http.Request) {
-	// GET request that fetches the current EV progress of a pokemon
-	// pokemon name is specified via query string param
-	if r.Method != "GET" {
-		w.Write([]byte(`{"message":"ERROR: invalid request"}`))
-		return
-	}
-
-	addHeaders(w)
-
-	dao := db.Db
-	pokemonName := r.URL.Query().Get("pokemon")
-
-	res, err := dao.Query("SELECT * FROM pokemons where name = $1", pokemonName)
-	if err != nil {
-		// read in init.sql to memory and run it
-		file, err := os.ReadFile("init.sql")
-		if err != nil {
-			fmt.Println(">>>>>?????")
-			log.Fatal(err)
-		}
-
-		fileString := string(file[:])
-		_, err = dao.Exec(fileString)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	defer res.Close()
-	
-	var pokemons []PokemonResponse
-	for res.Next() {
-		var p PokemonResponse
-		err = res.Scan(&p.Id, &p.Name, &p.Hp, &p.Atk, &p.Def, &p.Spa, &p.Spd, &p.Spe)
-		if err != nil {
-			break
-		}
-		pokemons = append(pokemons, p)
-	}
-
-	json.NewEncoder(w).Encode(pokemons)
-}
-
 // return all party pokemon info in JSON format 
 func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
@@ -154,15 +119,29 @@ func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, p := range results {
 		res = append(res, PokemonResponse{
-			"",
+			strconv.Itoa(int(p.PokedexId)),
+			fmt.Sprintf("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/%d.png", p.PokedexId),
 			p.Level,
 			p.Name,
-			p.EffortValues.Hp,
-			p.EffortValues.Attack,
-			p.EffortValues.Defense,
-			p.EffortValues.SpAttack,
-			p.EffortValues.SpDefense,
-			p.EffortValues.Speed,
+			"mockAbility",
+			"mockitem",
+			p.Nature,
+			StatResponse{
+				p.EVs.Hp,
+				p.EVs.Attack,
+				p.EVs.Defense,
+				p.EVs.SpAttack,
+				p.EVs.SpDefense,
+				p.EVs.Speed,
+			},
+			StatResponse{
+				p.Stats.Hp,
+				p.Stats.Attack,
+				p.Stats.Defense,
+				p.Stats.SpAttack,
+				p.Stats.SpDefense,
+				p.Stats.Speed,
+			},
 		})
 	}
 
