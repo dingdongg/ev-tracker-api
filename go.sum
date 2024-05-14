@@ -1,5 +1,7 @@
-github.com/dingdongg/pkmn-platinum-rom-parser v0.1.4 h1:axIfXTsgL2bbAtggKKVbmAlPEZ/U1DrDynAi7klSJ6o=
-github.com/dingdongg/pkmn-platinum-rom-parser v0.1.4/go.mod h1:Mrf1HPBOKxDh6+GVpPPb/iWQytlpnU1TNbrFG5UqO2A=
+github.com/dingdongg/pkmn-platinum-rom-parser v1.0.0 h1:4X6s2xPFcmAhYZBBgSdaIQfJ0ac399aWnVmRJNRITj0=
+github.com/dingdongg/pkmn-platinum-rom-parser v1.0.0/go.mod h1:egaAzzVVpapxOpdYidAfZrbmwat8ki2P2+9Gty8omH0=
+github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
+github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/joho/godotenv v1.5.1 h1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=
 github.com/joho/godotenv v1.5.1/go.mod h1:f4LDr5Voq0i2e/R5DDNOoa2zzDfwtkZa6DnEwAbqwq4=
 github.com/lib/pq v1.10.9 h1:YXG7RB+JIjhP29X+OtkiDnYaXQwpS4JEWq7dtCCRUEw=
