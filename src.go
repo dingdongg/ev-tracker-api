@@ -2,13 +2,14 @@ package main
 
 import (
 	"ev-tracker/src/handlers"
-	"fmt"
 	"net/http"
+
+	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
 )
 
 func main() {
-	fmt.Println("HELLO")
-
 	http.HandleFunc("/post-savefile", handlers.ReadSaveFileHandler)
-	http.ListenAndServe(":8080", nil)
+
+	lambda.Start(httpadapter.New(http.DefaultServeMux).ProxyWithContext)
 }
