@@ -1,1 +1,7 @@
 .env
+src
+src.*
+
+.terraform/*
+terraform.tfstate
+terraform.tfstate.*
