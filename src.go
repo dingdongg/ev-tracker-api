@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/post-savefile", handlers.ReadSaveFileHandler)
-
+	http.HandleFunc("/", handlers.ReadSaveFileHandler)
 	lambda.Start(httpadapter.New(http.DefaultServeMux).ProxyWithContext)
 }

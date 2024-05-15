@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strconv"
-	"ev-tracker/src/db"
 
 	_ "github.com/lib/pq"
 	ROMparser "github.com/dingdongg/pkmn-platinum-rom-parser"
@@ -48,48 +46,6 @@ type PokemonUpdateRequest struct {
 func addHeaders(w http.ResponseWriter) {
 	w.Header().Add("Access-Control-Allow-Origin", "http://localhost:5173")
 	w.Header().Add("Content-Type", "application/json")
-}
-
-func UpdatePokemonHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		w.Write([]byte(`{"message":"ERROR: invalid request:"}`))
-		return
-	}
-
-	addHeaders(w)
-
-	dao := db.Db
-	var body PokemonUpdateRequest
-
-	jsonDecoder := json.NewDecoder(r.Body)
-	err := jsonDecoder.Decode(&body)
-	if err != nil {
-		log.Fatal("CANT READ REQ BODY", err)
-	}
-
-	// update pokemon in DB
-	_, err = dao.Exec(
-		`UPDATE pokemons SET 
-			hp = $1, 
-			attack = $2, 
-			defense = $3, 
-			sp_attack = $4, 
-			sp_defense = $5, 
-			speed = $6 
-		WHERE name = $7`,
-		body.NewHp,
-		body.NewAtk,
-		body.NewDef,
-		body.NewSpa,
-		body.NewSpd,
-		body.NewSpe,
-		body.Name,
-	)
-	if err != nil {
-		log.Fatal("FAILED TO UPDATE DB ", err)
-	}
-
-	w.Write([]byte(`{"message":"Success"}`))
 }
 
 // return all party pokemon info in JSON format 
