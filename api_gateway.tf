@@ -24,7 +24,6 @@ resource "aws_api_gateway_integration" "ev_tracker" {
     resource_id = aws_api_gateway_resource.ev_tracker.id
     rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
     type = "AWS_PROXY"
-    credentials = aws_iam_role.ev_tracker.arn
 
     uri = aws_lambda_function.ev_tracker_api.invoke_arn
     content_handling = "CONVERT_TO_BINARY"
@@ -59,7 +58,6 @@ resource "aws_api_gateway_stage" "ev_tracker" {
     deployment_id = aws_api_gateway_deployment.ev_tracker.id
     rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
     stage_name = var.stage_name
-    depends_on = [ aws_cloudwatch_log_group.ev_tracker ]
 }
 
 output "deployed_api_gateway" {
