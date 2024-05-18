@@ -1,7 +1,8 @@
 .env
-src
-src.*
+bootstrap
+bootstrap.*
 
 .terraform/*
 terraform.tfstate
 terraform.tfstate.*
+variables.tf

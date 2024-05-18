@@ -55,17 +55,35 @@ resource "aws_iam_role_policy" "lambda_policy" {
 
 data "archive_file" "lambda_ev_tracker_api" {
     type = "zip"
-    source_file = "${path.module}/src"
-    output_path = "${path.module}/src.zip"
+    source_file = "${path.module}/${local.filename}"
+    output_path = "${path.module}/${local.filename}.zip"
 }
 
 resource "aws_lambda_function" "ev_tracker_api" {
-    function_name = "EVTrackerAPI"
+    function_name = local.fn_name
     description = "Backend API for my EV Tracking application"
     role = aws_iam_role.lambda_role.arn
 
-    runtime = "provided.al2023"
-    handler = "main"
-    filename = "src.zip"
-    source_code_hash = filebase64sha256("src.zip")
+    runtime = local.runtime
+    filename = "${local.filename}.zip"
+    handler = local.handler
+    source_code_hash = filebase64sha256("${local.filename}.zip")
+}
+
+variable "region" {
+    default = "us-east-1"
+    type = string
+}
+
+variable "accountId" {
+    type = string
+}
+
+resource "aws_lambda_permission" "apigw_lambda" {
+    statement_id = "AllowExecutionFromAPIGateway"
+    action = "lambda:InvokeFunction"
+    function_name = aws_lambda_function.ev_tracker_api.function_name
+    principal = "apigateway.amazonaws.com"
+
+    source_arn = "arn:aws:execute-api:${var.region}:${var.accountId}:${aws_api_gateway_rest_api.ev_tracker.id}/*/${aws_api_gateway_method.ev_tracker.http_method}${aws_api_gateway_resource.ev_tracker.path}"
 }
