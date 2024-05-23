@@ -6,3 +6,5 @@ bootstrap.*
 terraform.tfstate
 terraform.tfstate.*
 variables.tf
+
+NOTE_TO_SELF.md
