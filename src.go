@@ -11,4 +11,5 @@ import (
 func main() {
 	http.HandleFunc("/", handlers.ReadSaveFileHandler)
 	lambda.Start(httpadapter.New(http.DefaultServeMux).ProxyWithContext)
+	// http.ListenAndServe(":8080", nil)
 }
