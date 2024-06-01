@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	_ "github.com/lib/pq"
-	ROMparser "github.com/dingdongg/pkmn-platinum-rom-parser"
+	ROMparser "github.com/dingdongg/pkmn-rom-parser/v3"
 )
 
 type StatResponse struct {
@@ -50,19 +50,29 @@ func addHeaders(w http.ResponseWriter) {
 
 // return all party pokemon info in JSON format 
 func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
+	addHeaders(w)
+	r.Body = http.MaxBytesReader(w, r.Body, 1 << 20)
+
 	if r.Method != "POST" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte(`{"message":"ERROR: invalid request"}`))
 		return
 	}
 
-	addHeaders(w)
+	if err := r.ParseMultipartForm(1 << 19); err != nil {
+		fmt.Println("FILE TOO BIG TO PARSE: ", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"message":"ERROR: file too big"}`))
+		return
+	}
 
-	r.ParseMultipartForm(1 << 19)
 	var buf bytes.Buffer
 
 	file, header, err := r.FormFile("savefile")
 	if err != nil {
-		fmt.Println("BRUH ", err)
+		fmt.Println("BRUH: ", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message":"INTERNAL SERVER ERROR"}`))
 		return
 	}
 	defer file.Close()
@@ -70,7 +80,14 @@ func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("filename: %s\n", header.Filename)
 	io.Copy(&buf, file)
 
-	results := ROMparser.Parse(buf.Bytes())
+	results, err := ROMparser.Parse(buf.Bytes())
+	if err != nil {
+		fmt.Println("PARSING FAILED: ", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"message":"ERROR: invalid file"}`))
+		return
+	}
+
 	var res []PokemonResponse
 
 	for _, p := range results {
@@ -79,8 +96,8 @@ func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Sprintf("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/%d.png", p.PokedexId),
 			p.Level,
 			p.Name,
-			"mockAbility",
-			"mockitem",
+			p.Ability,
+			p.Item,
 			p.Nature,
 			StatResponse{
 				p.EVs.Hp,
