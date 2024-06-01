@@ -61,7 +61,43 @@ resource "aws_api_gateway_stage" "ev_tracker" {
     stage_name = var.stage_name
 }
 
-output "deployed_api_gateway" {
-    description = "ID of deployed API gateway"
-    value = aws_api_gateway_rest_api.ev_tracker.id
+resource "aws_api_gateway_usage_plan" "ev_tracker" {
+    name = "ev tracker api usage"
+    description = "generated via terrafrorm"
+
+    api_stages {
+        api_id = aws_api_gateway_rest_api.ev_tracker.id
+        stage = aws_api_gateway_stage.ev_tracker.stage_name
+    }
+
+    quota_settings {
+        limit = 100000
+        period = "MONTH"
+    }
+
+    throttle_settings {
+        burst_limit = 500
+        rate_limit = 1000
+    }
+}
+
+data "aws_api_gateway_api_key" "api_key" {
+    id = "o8phgt32t9"
+}
+
+resource "aws_api_gateway_usage_plan_key" "ev_tracker" {
+    key_id = data.aws_api_gateway_api_key.api_key.id
+    key_type = "API_KEY"
+    usage_plan_id = aws_api_gateway_usage_plan.ev_tracker.id
+}
+
+output "apigw_url" {
+    description = "deployed API Gateway URL"
+    value = "${aws_api_gateway_stage.ev_tracker.invoke_url}${aws_api_gateway_resource.ev_tracker.path}"
+}
+
+output "apigw_api_key" {
+    sensitive = true
+    description = "EV Tracker API Key"
+    value = data.aws_api_gateway_api_key.api_key.value
 }
