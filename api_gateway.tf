@@ -3,6 +3,10 @@ resource "aws_api_gateway_rest_api" "ev_tracker" {
     binary_media_types = [
         "multipart/form-data",
     ]
+
+    lifecycle {
+        create_before_destroy = true
+    }
 }
 
 resource "aws_api_gateway_resource" "ev_tracker" {
@@ -11,11 +15,25 @@ resource "aws_api_gateway_resource" "ev_tracker" {
     rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
 }
 
+resource "aws_api_gateway_resource" "save" {
+    parent_id = aws_api_gateway_rest_api.ev_tracker.root_resource_id
+    path_part = "save"
+    rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
+}
+
 resource "aws_api_gateway_method" "ev_tracker" {
     authorization = "NONE"
     api_key_required = true
     http_method = "POST"
     resource_id = aws_api_gateway_resource.ev_tracker.id
+    rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
+}
+
+resource "aws_api_gateway_method" "save" {
+    authorization = "NONE"
+    api_key_required = true
+    http_method = "POST"
+    resource_id = aws_api_gateway_resource.save.id
     rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
 }
 
@@ -30,6 +48,16 @@ resource "aws_api_gateway_integration" "ev_tracker" {
     content_handling = "CONVERT_TO_BINARY"
 }
 
+resource "aws_api_gateway_integration" "save" {
+    http_method = aws_api_gateway_method.save.http_method
+    integration_http_method = aws_api_gateway_method.save.http_method
+    resource_id = aws_api_gateway_resource.save.id
+    rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
+    type = "AWS_PROXY"
+
+    uri = aws_lambda_function.ev_tracker_api.invoke_arn
+}
+
 resource "aws_api_gateway_deployment" "ev_tracker" {
     rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
 
@@ -39,8 +67,11 @@ resource "aws_api_gateway_deployment" "ev_tracker" {
         // https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/api_gateway_deployment#triggers
         redeployment = sha1(jsonencode([
             aws_api_gateway_resource.ev_tracker.id,
+            aws_api_gateway_resource.save.id,
             aws_api_gateway_method.ev_tracker.id,
+            aws_api_gateway_method.save.id,
             aws_api_gateway_integration.ev_tracker.id,
+            aws_api_gateway_integration.save.id,
         ]))
     }
 
@@ -78,6 +109,10 @@ resource "aws_api_gateway_usage_plan" "ev_tracker" {
     throttle_settings {
         burst_limit = 500
         rate_limit = 1000
+    }
+
+    lifecycle {
+        create_before_destroy = true
     }
 }
 
