@@ -68,6 +68,17 @@ resource "aws_lambda_function" "ev_tracker_api" {
     filename = "${local.filename}.zip"
     handler = local.handler
     source_code_hash = filebase64sha256("${local.filename}.zip")
+
+    environment {
+        variables = {
+            DB_CONN_STRING = var.db_conn_string
+        }
+    }
+
+    vpc_config {
+        subnet_ids = var.lambda_subnet_ids
+        security_group_ids = var.lambda_vpc_security_group
+    }
 }
 
 variable "region" {
@@ -85,5 +96,6 @@ resource "aws_lambda_permission" "apigw_lambda" {
     function_name = aws_lambda_function.ev_tracker_api.function_name
     principal = "apigateway.amazonaws.com"
 
-    source_arn = "arn:aws:execute-api:${var.region}:${var.accountId}:${aws_api_gateway_rest_api.ev_tracker.id}/*/${aws_api_gateway_method.ev_tracker.http_method}${aws_api_gateway_resource.ev_tracker.path}"
+    # source_arn = "arn:aws:execute-api:${var.region}:${var.accountId}:${aws_api_gateway_rest_api.ev_tracker.id}/*/*/*"
+    source_arn = "${aws_api_gateway_rest_api.ev_tracker.execution_arn}/*"
 }
