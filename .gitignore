@@ -5,6 +5,10 @@ bootstrap.*
 .terraform/*
 terraform.tfstate
 terraform.tfstate.*
+terraform.tfvars
 variables.tf
 
 NOTE_TO_SELF.md
+
+scripts/
+ssh.sh
