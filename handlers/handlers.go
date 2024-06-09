@@ -2,14 +2,16 @@ package handlers
 
 import (
 	"bytes"
+	"ev-tracker/src/dao/factory"
+
 	"encoding/json"
 	"fmt"
 	"io"
+
 	"net/http"
 	"strconv"
 
-	_ "github.com/lib/pq"
-	ROMparser "github.com/dingdongg/pkmn-rom-parser/v3"
+	ROMparser "github.com/dingdongg/pkmn-rom-parser/v4"
 )
 
 type StatResponse struct {
@@ -30,7 +32,9 @@ type PokemonResponse struct {
 	HeldItem 	string	`json:"heldItem"`
 	Nature		string	`json:"nature"`
 	EffortValues StatResponse	`json:"effortValues"`
-	BaseStats	 StatResponse	`json:"baseStats"`
+	IndivValues  StatResponse 	`json:"indivValues"`
+	BattleStats	 StatResponse	`json:"battleStats"`
+	BaseStats 	 StatResponse 	`json:"baseStats"`
 }
 
 type PokemonUpdateRequest struct {
@@ -89,8 +93,11 @@ func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var res []PokemonResponse
+	dao := factory.New()
 
 	for _, p := range results {
+		pkmn := dao.GetOne(uint(p.PokedexId))
+
 		res = append(res, PokemonResponse{
 			strconv.Itoa(int(p.PokedexId)),
 			fmt.Sprintf("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/%d.png", p.PokedexId),
@@ -108,12 +115,28 @@ func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 				p.EVs.Speed,
 			},
 			StatResponse{
+				p.IVs.Hp,
+				p.IVs.Attack,
+				p.IVs.Defense,
+				p.IVs.SpAttack,
+				p.IVs.SpDefense,
+				p.IVs.Speed,
+			},
+			StatResponse{
 				p.Stats.Hp,
 				p.Stats.Attack,
 				p.Stats.Defense,
 				p.Stats.SpAttack,
 				p.Stats.SpDefense,
 				p.Stats.Speed,
+			},
+			StatResponse{
+				pkmn.BaseHp,
+				pkmn.BaseAtk,
+				pkmn.BaseDef,
+				pkmn.BaseSpA,
+				pkmn.BaseSpD,
+				pkmn.BaseSpe,
 			},
 		})
 	}
