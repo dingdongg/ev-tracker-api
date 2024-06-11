@@ -5,7 +5,7 @@ go 1.22.3
 require (
 	github.com/aws/aws-lambda-go v1.47.0
 	github.com/awslabs/aws-lambda-go-api-proxy v0.16.2
-	github.com/dingdongg/pkmn-rom-parser/v4 v4.0.1
+	github.com/dingdongg/pkmn-rom-parser/v4 v4.0.2
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/joho/godotenv v1.5.1
 )
