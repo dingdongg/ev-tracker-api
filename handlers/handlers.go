@@ -105,27 +105,30 @@ func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	io.Copy(&buf, file)
 
-	if (authPayload.Authenticated) {
-		client, err := bucket.New()
-		if err != nil {
-			fmt.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(`{"message":"ERROR: internal server error"}`))
-			return
-		}
+	// TODO FIGURE THIS OUT!!!!!
+	// if (authPayload.Authenticated) {
+	// 	client, err := bucket.New()
+	// 	if err != nil {
+	// 		fmt.Println(err)
+	// 		w.WriteHeader(http.StatusInternalServerError)
+	// 		w.Write([]byte(`{"message":"ERROR: internal server error"}`))
+	// 		return
+	// 	}
 
-		err = client.PutInBucket("ev-tracker-savefiles", bucket.CloudItem{
-			Id: authPayload.UserId,
-			Value: buf.Bytes(),
-		})
+	// 	err = client.PutInBucket("ev-tracker-savefiles", bucket.CloudItem{
+	// 		Id: authPayload.UserId,
+	// 		Value: buf.Bytes(),
+	// 	})
 
-		if err != nil {
-			fmt.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(`{"message":"ERROR: internal server error"}`))
-			return
-		}
-	}
+	// 	if err != nil {
+	// 		fmt.Println(err)
+	// 		w.WriteHeader(http.StatusInternalServerError)
+	// 		w.Write([]byte(`{"message":"ERROR: internal server error"}`))
+	// 		return
+	// 	}
+
+	// 	fmt.Println("pulled file from s3")
+	// }
 
 	results, err := ROMparser.Parse(buf.Bytes())
 	if err != nil {
@@ -134,6 +137,8 @@ func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"message":"ERROR: invalid file"}`))
 		return
 	}
+
+	fmt.Println("parsed savefile")
 
 	var res []PokemonResponse
 	dao := factory.New()
@@ -184,7 +189,10 @@ func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	fmt.Println("transformed response into DTOs")
+
 	json.NewEncoder(w).Encode(res)
+	fmt.Println("wrote bytes to client")
 }
 
 func writeStat(writeRequest *rq.WriteRequest, stat StatResponse, specifier string) error {
