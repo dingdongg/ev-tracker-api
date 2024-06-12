@@ -55,6 +55,24 @@ func addHeaders(w http.ResponseWriter) {
 	w.Header().Add("Content-Type", "application/json")
 }
 
+func uploadSavefileToS3(a AuthPayload, buf bytes.Buffer) error {
+	client, err := bucket.New()
+	if err != nil {
+		return err
+	}
+
+	err = client.PutInBucket("ev-tracker-savefiles", bucket.CloudItem{
+		Id: a.UserId,
+		Value: buf.Bytes(),
+	})
+
+	if err == nil {
+		fmt.Println("successfully uploaded file to s3!")
+	}
+
+	return err
+}
+
 // return all party pokemon info in JSON format 
 // upload savefile to s3 if user is authenticated
 func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
@@ -106,27 +124,9 @@ func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 	io.Copy(&buf, file)
 
 	if (authPayload.Authenticated) {
-		client, err := bucket.New()
-		if err != nil {
-			fmt.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(`{"message":"ERROR: internal server error"}`))
-			return
-		}
-	
-		err = client.PutInBucket("ev-tracker-savefiles", bucket.CloudItem{
-			Id: authPayload.UserId,
-			Value: buf.Bytes(),
-		})
-	
-		if err != nil {
-			fmt.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(`{"message":"ERROR: internal server error"}`))
-			return
-		}
+		go uploadSavefileToS3(authPayload, buf)
 	}
-	
+
 	results, err := ROMparser.Parse(buf.Bytes())
 	if err != nil {
 		fmt.Println("PARSING FAILED: ", err)
