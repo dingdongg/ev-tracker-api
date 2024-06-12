@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"errors"
+	"ev-tracker/src/bucket"
 	"ev-tracker/src/dao/factory"
 	"os"
 
@@ -40,14 +41,14 @@ type PokemonResponse struct {
 	BaseStats 	 StatResponse 	`json:"baseStats"`
 }
 
-type PokemonUpdateRequest struct {
-	Name	string
-	NewHp	uint
-	NewAtk	uint
-	NewDef	uint
-	NewSpa	uint
-	NewSpd	uint
-	NewSpe	uint
+type AuthPayload struct {
+	Authenticated bool `json:"authenticated"`
+	UserId string `json:"userId"`
+}
+
+type UpdateSavefilePayload struct {
+	Requests []PokemonResponse `json:"requests"`
+	UserId string `json:"userId"`
 }
 
 func addHeaders(w http.ResponseWriter) {
@@ -55,7 +56,26 @@ func addHeaders(w http.ResponseWriter) {
 	w.Header().Add("Content-Type", "application/json")
 }
 
+func uploadSavefileToS3(a AuthPayload, buf bytes.Buffer) error {
+	client, err := bucket.New()
+	if err != nil {
+		return err
+	}
+
+	err = client.PutInBucket("ev-tracker-savefiles", bucket.CloudItem{
+		Id: a.UserId,
+		Value: buf.Bytes(),
+	})
+
+	if err == nil {
+		fmt.Println("successfully uploaded file to s3!")
+	}
+
+	return err
+}
+
 // return all party pokemon info in JSON format 
+// upload savefile to s3 if user is authenticated
 func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 	addHeaders(w)
 	r.Body = http.MaxBytesReader(w, r.Body, 1 << 20)
@@ -83,9 +103,30 @@ func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
-	
+
 	fmt.Printf("filename: %s\n", header.Filename)
+
+	authFile, _, err := r.FormFile("authState")
+	if err != nil {
+		fmt.Println("AUTH STATE ERROR: ", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message":"INTERNAL SERVER ERROR"}`))
+		return
+	}
+	defer authFile.Close()
+
+	var authPayload AuthPayload
+
+	decoder := json.NewDecoder(authFile)
+	decoder.Decode(&authPayload)
+
+	fmt.Printf("authenticated? %v\n", authPayload)
+
 	io.Copy(&buf, file)
+
+	if (authPayload.Authenticated) {
+		go uploadSavefileToS3(authPayload, buf)
+	}
 
 	results, err := ROMparser.Parse(buf.Bytes())
 	if err != nil {
@@ -164,7 +205,7 @@ func writeStat(writeRequest *rq.WriteRequest, stat StatResponse, specifier strin
 	case "IV": {
 		packedIV := uint(0)
 		for i, s := range values {
-			val := s << (i * 8)
+			val := s << (i * 8) // should this be 5 bits?
 			packedIV |= val
 		}
 		writeRequest.WriteIV(packedIV)
@@ -184,7 +225,10 @@ func UpdateSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"message":"ERROR: invalid request"}`))
 		return
 	}
-	var yuh []PokemonResponse
+	var yuh UpdateSavefilePayload
+	
+	// TODO: make use of goroutines later to concurrently fetch S3 savefile
+
 
 	var req []byte
 	decoder := json.NewDecoder(r.Body)
@@ -195,7 +239,7 @@ func UpdateSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	writeReqs := make([]rq.WriteRequest, 0)
 	
-	for i, p := range yuh {
+	for i, p := range yuh.Requests {
 		fmt.Println(p)
 
 		writeRequest := rq.NewWriteRequest(uint(i))
