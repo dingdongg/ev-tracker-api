@@ -68,6 +68,7 @@ resource "aws_lambda_function" "ev_tracker_api" {
     function_name = local.fn_name
     description = "Backend API for my EV Tracking application"
     role = aws_iam_role.lambda_role.arn
+    timeout = 60
 
     runtime = local.runtime
     filename = "${local.filename}.zip"
