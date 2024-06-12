@@ -5,7 +5,6 @@ import (
 	"errors"
 	"ev-tracker/src/bucket"
 	"ev-tracker/src/dao/factory"
-	"os"
 
 	"encoding/json"
 	"fmt"
@@ -226,16 +225,28 @@ func UpdateSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var yuh UpdateSavefilePayload
-	
-	// TODO: make use of goroutines later to concurrently fetch S3 savefile
 
-
-	var req []byte
 	decoder := json.NewDecoder(r.Body)
 	decoder.Decode(&yuh)
 
-	fmt.Printf("req: %v\n", req)
 	fmt.Printf("UNMARSHAL'D: %v\n", yuh)
+
+	// TODO: make use of goroutines later to concurrently fetch S3 savefile
+	client, err := bucket.New()
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message":"ERROR: internal server error"}`))
+		return
+	}
+
+	savefile, err := client.GetCloudItem("ev-tracker-savefiles", yuh.UserId)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message":"ERROR: internal server error"}`))
+		return
+	}
 
 	writeReqs := make([]rq.WriteRequest, 0)
 	
@@ -253,13 +264,6 @@ func UpdateSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 		// TODO: change pkmn-rom-parser interface for writing abilities and held items via their names
 
 		writeReqs = append(writeReqs, writeRequest)
-	}
-
-	// fetch the cached savefile from s3 bucket or sth; hardcoded for now
-	savefile, err := os.ReadFile("../pkmn-rom-parser/savefiles/new.sav")
-	if err != nil {
-		w.Write([]byte(`{"message":"failed to open mock savefile"}`))
-		return
 	}
 	
 	res, err := ROMparser.Write(savefile, writeReqs)
