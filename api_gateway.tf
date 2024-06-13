@@ -2,6 +2,7 @@ resource "aws_api_gateway_rest_api" "ev_tracker" {
     name = "EvTrackerAPIGateway"
     binary_media_types = [
         "multipart/form-data",
+        "application/octet-stream",
     ]
 
     lifecycle {
