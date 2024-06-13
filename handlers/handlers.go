@@ -6,6 +6,7 @@ import (
 	"ev-tracker/src/bucket"
 	"ev-tracker/src/dao/factory"
 
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -106,29 +107,29 @@ func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 	io.Copy(&buf, file)
 
 	// TODO FIGURE THIS OUT!!!!!
-	// if (authPayload.Authenticated) {
-	// 	client, err := bucket.New()
-	// 	if err != nil {
-	// 		fmt.Println(err)
-	// 		w.WriteHeader(http.StatusInternalServerError)
-	// 		w.Write([]byte(`{"message":"ERROR: internal server error"}`))
-	// 		return
-	// 	}
+	if (authPayload.Authenticated) {
+		client, err := bucket.New()
+		if err != nil {
+			fmt.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"message":"ERROR: internal server error"}`))
+			return
+		}
 
-	// 	err = client.PutInBucket("ev-tracker-savefiles", bucket.CloudItem{
-	// 		Id: authPayload.UserId,
-	// 		Value: buf.Bytes(),
-	// 	})
+		err = client.PutInBucket("ev-tracker-savefiles", bucket.CloudItem{
+			Id: authPayload.UserId,
+			Value: buf.Bytes(),
+		})
 
-	// 	if err != nil {
-	// 		fmt.Println(err)
-	// 		w.WriteHeader(http.StatusInternalServerError)
-	// 		w.Write([]byte(`{"message":"ERROR: internal server error"}`))
-	// 		return
-	// 	}
+		if err != nil {
+			fmt.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"message":"ERROR: internal server error"}`))
+			return
+		}
 
-	// 	fmt.Println("pulled file from s3")
-	// }
+		fmt.Println("pushed file to s3")
+	}
 
 	results, err := ROMparser.Parse(buf.Bytes())
 	if err != nil {
@@ -283,9 +284,13 @@ func UpdateSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	b64Response := base64.StdEncoding.EncodeToString(res)
+
 	w.Header().Add("Content-Type", "application/octet-stream")
 	w.Header().Add("Content-Disposition", "attachment; filename=\"savefile\"")
-	w.Header().Add("Content-Length", fmt.Sprint(len(res)))
+	w.Header().Add("Content-Length", fmt.Sprint(len(b64Response)))
+
+	fmt.Println("length of file: ", fmt.Sprint(len(b64Response)))
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -296,6 +301,6 @@ func UpdateSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("success?")
 
-	w.Write(res)
+	w.Write([]byte(b64Response))
 	flusher.Flush()
 }
