@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"bytes"
-	"errors"
 	"ev-tracker/src/bucket"
 	"ev-tracker/src/dao/factory"
 
@@ -15,7 +14,7 @@ import (
 	"strconv"
 
 	ROMparser "github.com/dingdongg/pkmn-rom-parser/v4"
-	rq "github.com/dingdongg/pkmn-rom-parser/v4/rom_writer/req"
+	"github.com/dingdongg/pkmn-rom-parser/v4/rom_writer"
 )
 
 type StatResponse struct {
@@ -25,6 +24,18 @@ type StatResponse struct {
 	Spa			uint	`json:"spa"`
 	Spd			uint	`json:"spd"`
 	Spe			uint	`json:"spe"`
+}
+
+func (sr StatResponse) Compress(elemBits uint) uint {
+	var values = [6]uint{sr.Hp, sr.Atk, sr.Def, sr.Spe, sr.Spa, sr.Spd}
+
+	compressed := uint(0)
+	for i, s := range values {
+		val := s << (uint(i) * elemBits)
+		compressed |= val
+	}
+
+	return compressed
 }
 
 type PokemonResponse struct {
@@ -196,35 +207,6 @@ func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("wrote bytes to client")
 }
 
-func writeStat(writeRequest *rq.WriteRequest, stat StatResponse, specifier string) error {
-	var values = [6]uint{stat.Hp, stat.Atk, stat.Def, stat.Spe, stat.Spa, stat.Spd}
-
-	switch specifier {
-	case "BATTLE_STAT":
-		writeRequest.WriteBattleStats(stat.Hp, stat.Atk, stat.Def, stat.Spa, stat.Spd, stat.Spe)
-	case "EV": {
-		packedEV := uint(0)
-		for i, s := range values {
-			val := s << (i * 8)
-			packedEV |= val
-		}
-		writeRequest.WriteEV(packedEV)
-	}
-	case "IV": {
-		packedIV := uint(0)
-		for i, s := range values {
-			val := s << (i * 8) // should this be 5 bits?
-			packedIV |= val
-		}
-		writeRequest.WriteIV(packedIV)
-	}
-	default:
-		return errors.New("writeStat() - invalid specifier")
-	}
-
-	return nil
-}
-
 func UpdateSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Origin", "http://localhost:5173")
 
@@ -257,25 +239,30 @@ func UpdateSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeReqs := make([]rq.WriteRequest, 0)
+	builder := rom_writer.NewRequestBuilder()
 	
 	for i, p := range yuh.Requests {
 		fmt.Println(p)
 
-		writeRequest := rq.NewWriteRequest(uint(i))
+		request, err := builder.AddRequest(uint(i))
 
-		writeStat(&writeRequest, p.BattleStats, "BATTLE_STAT")
-		writeStat(&writeRequest, p.EffortValues, "EV")
-		writeStat(&writeRequest, p.IndivValues, "IV")
-		writeRequest.WriteLevel(p.Level)
-		writeRequest.WriteNickname(p.Name)
+		if err != nil {
+			fmt.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"message":"ERROR: internal server error"}`))
+			return
+		}
+
+		request.WriteBattleStats(p.BattleStats.Hp, p.BattleStats.Atk, p.BattleStats.Def, p.BattleStats.Spa, p.BattleStats.Spd, p.BattleStats.Spe)
+		request.WriteEV(p.EffortValues)
+		request.WriteIV(p.IndivValues)
+		request.WriteLevel(p.Level)
+		request.WriteNickname(p.Name)
 
 		// TODO: change pkmn-rom-parser interface for writing abilities and held items via their names
-
-		writeReqs = append(writeReqs, writeRequest)
 	}
 	
-	res, err := ROMparser.Write(savefile, writeReqs)
+	res, err := ROMparser.Write(savefile, builder.Buffer)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
