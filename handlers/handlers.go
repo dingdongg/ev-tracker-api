@@ -13,17 +13,18 @@ import (
 	"net/http"
 	"strconv"
 
-	ROMparser "github.com/dingdongg/pkmn-rom-parser/v4"
-	"github.com/dingdongg/pkmn-rom-parser/v4/rom_writer"
+	ROMparser "github.com/dingdongg/pkmn-rom-parser/v5"
+	"github.com/dingdongg/pkmn-rom-parser/v5/data"
+	"github.com/dingdongg/pkmn-rom-parser/v5/rom_writer"
 )
 
 type StatResponse struct {
-	Hp 			uint	`json:"hp"`
-	Atk			uint	`json:"atk"`
-	Def 		uint	`json:"def"`
-	Spa			uint	`json:"spa"`
-	Spd			uint	`json:"spd"`
-	Spe			uint	`json:"spe"`
+	Hp  uint `json:"hp"`
+	Atk uint `json:"atk"`
+	Def uint `json:"def"`
+	Spa uint `json:"spa"`
+	Spd uint `json:"spd"`
+	Spe uint `json:"spe"`
 }
 
 func (sr StatResponse) Compress(elemBits uint) uint {
@@ -39,27 +40,27 @@ func (sr StatResponse) Compress(elemBits uint) uint {
 }
 
 type PokemonResponse struct {
-	Id			string	`json:"id"`
-	SpriteUrl	string	`json:"spriteUrl"`
-	Level 		uint 	`json:"level"`
-	Name		string	`json:"name"`
-	Ability 	string 	`json:"ability"`
-	HeldItem 	string	`json:"heldItem"`
-	Nature		string	`json:"nature"`
-	EffortValues StatResponse	`json:"effortValues"`
-	IndivValues  StatResponse 	`json:"indivValues"`
-	BattleStats	 StatResponse	`json:"battleStats"`
-	BaseStats 	 StatResponse 	`json:"baseStats"`
+	Id           string       `json:"id"`
+	SpriteUrl    string       `json:"spriteUrl"`
+	Level        uint         `json:"level"`
+	Name         string       `json:"name"`
+	Ability      string       `json:"ability"`
+	HeldItem     string       `json:"heldItem"`
+	Nature       string       `json:"nature"`
+	EffortValues StatResponse `json:"effortValues"`
+	IndivValues  StatResponse `json:"indivValues"`
+	BattleStats  StatResponse `json:"battleStats"`
+	BaseStats    StatResponse `json:"baseStats"`
 }
 
 type AuthPayload struct {
-	Authenticated bool `json:"authenticated"`
-	UserId string `json:"userId"`
+	Authenticated bool   `json:"authenticated"`
+	UserId        string `json:"userId"`
 }
 
 type UpdateSavefilePayload struct {
 	Requests []PokemonResponse `json:"requests"`
-	UserId string `json:"userId"`
+	UserId   string            `json:"userId"`
 }
 
 func addHeaders(w http.ResponseWriter) {
@@ -67,11 +68,11 @@ func addHeaders(w http.ResponseWriter) {
 	w.Header().Add("Content-Type", "application/json")
 }
 
-// return all party pokemon info in JSON format 
+// return all party pokemon info in JSON format
 // upload savefile to s3 if user is authenticated
 func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 	addHeaders(w)
-	r.Body = http.MaxBytesReader(w, r.Body, 1 << 20)
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	if r.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -118,7 +119,7 @@ func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 	io.Copy(&buf, file)
 
 	// TODO FIGURE THIS OUT!!!!!
-	if (authPayload.Authenticated) {
+	if authPayload.Authenticated {
 		client, err := bucket.New()
 		if err != nil {
 			fmt.Println(err)
@@ -128,7 +129,7 @@ func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		err = client.PutInBucket("ev-tracker-savefiles", bucket.CloudItem{
-			Id: authPayload.UserId,
+			Id:    authPayload.UserId,
 			Value: buf.Bytes(),
 		})
 
@@ -240,7 +241,7 @@ func UpdateSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	builder := rom_writer.NewRequestBuilder()
-	
+
 	for i, p := range yuh.Requests {
 		fmt.Println(p)
 
@@ -258,10 +259,10 @@ func UpdateSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 		request.WriteIV(p.IndivValues)
 		request.WriteLevel(p.Level)
 		request.WriteNickname(p.Name)
-
-		// TODO: change pkmn-rom-parser interface for writing abilities and held items via their names
+		// request.WriteAbility(p.Ability)
+		// request.WriteItem(p.HeldItem)
 	}
-	
+
 	res, err := ROMparser.Write(savefile, builder.Buffer)
 
 	if err != nil {
@@ -294,10 +295,32 @@ func UpdateSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetItemsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Origin", "http://localhost:5173")
-	
+	w.Header().Add("Content-Type", "application/json")
+
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte(`{"message":"ERROR: invalid request"}`))
+		return
+	}
+
+	encoder := json.NewEncoder(w)
+	itemsMap := data.GenerateItemMap()
+
+	encoder.Encode(itemsMap)
 }
 
 func GetAbilitiesHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Add("Content-Type", "application/json")
 
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte(`{"message":"ERROR: invalid request"}`))
+		return
+	}
+
+	encoder := json.NewEncoder(w)
+	abilityMap := data.GenerateAbilityMap()
+
+	encoder.Encode(abilityMap)
 }
