@@ -22,6 +22,18 @@ resource "aws_api_gateway_resource" "save" {
     rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
 }
 
+resource "aws_api_gateway_resource" "items" {
+    parent_id = aws_api_gateway_rest_api.ev_tracker.root_resource_id
+    path_part = "items"
+    rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
+}
+
+resource "aws_api_gateway_resource" "abilities" {
+    parent_id = aws_api_gateway_rest_api.ev_tracker.root_resource_id
+    path_part = "abilities"
+    rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
+}
+
 resource "aws_api_gateway_method" "ev_tracker" {
     authorization = "NONE"
     api_key_required = true
@@ -38,9 +50,25 @@ resource "aws_api_gateway_method" "save" {
     rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
 }
 
+resource "aws_api_gateway_method" "items" {
+    authorization = "NONE"
+    api_key_required = true
+    http_method = "GET"
+    resource_id = aws_api_gateway_resource.items.id
+    rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
+}
+
+resource "aws_api_gateway_method" "abilities" {
+    authorization = "NONE"
+    api_key_required = true
+    http_method = "GET"
+    resource_id = aws_api_gateway_resource.abilities.id
+    rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
+}
+
 resource "aws_api_gateway_integration" "ev_tracker" {
     http_method = aws_api_gateway_method.ev_tracker.http_method
-    integration_http_method = aws_api_gateway_method.ev_tracker.http_method
+    integration_http_method = "POST"
     resource_id = aws_api_gateway_resource.ev_tracker.id
     rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
     type = "AWS_PROXY"
@@ -51,8 +79,28 @@ resource "aws_api_gateway_integration" "ev_tracker" {
 
 resource "aws_api_gateway_integration" "save" {
     http_method = aws_api_gateway_method.save.http_method
-    integration_http_method = aws_api_gateway_method.save.http_method
+    integration_http_method = "POST"
     resource_id = aws_api_gateway_resource.save.id
+    rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
+    type = "AWS_PROXY"
+
+    uri = aws_lambda_function.ev_tracker_api.invoke_arn
+}
+
+resource "aws_api_gateway_integration" "items" {
+    http_method = aws_api_gateway_method.items.http_method
+    integration_http_method = "POST"
+    resource_id = aws_api_gateway_resource.items.id
+    rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
+    type = "AWS_PROXY"
+
+    uri = aws_lambda_function.ev_tracker_api.invoke_arn
+}
+
+resource "aws_api_gateway_integration" "abilities" {
+    http_method = aws_api_gateway_method.abilities.http_method
+    integration_http_method = "POST"
+    resource_id = aws_api_gateway_resource.abilities.id
     rest_api_id = aws_api_gateway_rest_api.ev_tracker.id
     type = "AWS_PROXY"
 
@@ -69,10 +117,16 @@ resource "aws_api_gateway_deployment" "ev_tracker" {
         redeployment = sha1(jsonencode([
             aws_api_gateway_resource.ev_tracker.id,
             aws_api_gateway_resource.save.id,
+            aws_api_gateway_resource.items.id,
+            aws_api_gateway_resource.abilities.id,
             aws_api_gateway_method.ev_tracker.id,
             aws_api_gateway_method.save.id,
+            aws_api_gateway_method.items.id,
+            aws_api_gateway_method.abilities.id,
             aws_api_gateway_integration.ev_tracker.id,
             aws_api_gateway_integration.save.id,
+            aws_api_gateway_integration.items.id,
+            aws_api_gateway_integration.abilities.id,
         ]))
     }
 
