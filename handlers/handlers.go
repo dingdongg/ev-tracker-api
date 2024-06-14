@@ -291,3 +291,13 @@ func UpdateSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(b64Response))
 	flusher.Flush()
 }
+
+func GetItemsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Access-Control-Allow-Origin", "http://localhost:5173")
+	
+}
+
+func GetAbilitiesHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Access-Control-Allow-Origin", "http://localhost:5173")
+
+}

@@ -13,6 +13,8 @@ import (
 func main() {
 	http.HandleFunc("/", handlers.ReadSaveFileHandler)
 	http.HandleFunc("/save", handlers.UpdateSaveFileHandler)
+	http.HandleFunc("/items", handlers.GetItemsHandler)
+	http.HandleFunc("/abilities", handlers.GetAbilitiesHandler)
 
 	if mode.DEV_MODE {
 		fmt.Println("Listening on port 8080")
