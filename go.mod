@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.27.18
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.55.1
 	github.com/awslabs/aws-lambda-go-api-proxy v0.16.2
-	github.com/dingdongg/pkmn-rom-parser/v4 v4.0.2
+	github.com/dingdongg/pkmn-rom-parser/v5 v5.0.0
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/joho/godotenv v1.5.1
 )

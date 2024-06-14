@@ -41,8 +41,8 @@ github.com/awslabs/aws-lambda-go-api-proxy v0.16.2/go.mod h1:vxxjwBHe/KbgFeNlAP/
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/dingdongg/pkmn-rom-parser/v4 v4.0.2 h1:OtsjcLkYC+X47Lz+fXoHCm+jQB6WRVdiKHuWzCzD4qw=
-github.com/dingdongg/pkmn-rom-parser/v4 v4.0.2/go.mod h1:QzUZko2CunxVtIUnpZptF7m34eQcM3jU8AJ+5tK5aWc=
+github.com/dingdongg/pkmn-rom-parser/v5 v5.0.0 h1:CKevRACfMXOHsMyMumBU04uXyQiI9Kg2pR8eMmUR420=
+github.com/dingdongg/pkmn-rom-parser/v5 v5.0.0/go.mod h1:fzNHY+XR5OeRoxBb1T3ZuoHcdkn0l5jCKU59oygTtrU=
 github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nosvA=
 github.com/fsnotify/fsnotify v1.7.0/go.mod h1:40Bi/Hjc2AVfZrqy+aj+yEI+/bRxZnMJyTJwOpGvigM=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
