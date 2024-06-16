@@ -13,9 +13,9 @@ import (
 	"net/http"
 	"strconv"
 
-	ROMparser "github.com/dingdongg/pkmn-rom-parser/v5"
-	"github.com/dingdongg/pkmn-rom-parser/v5/data"
-	"github.com/dingdongg/pkmn-rom-parser/v5/rom_writer"
+	ROMparser "github.com/dingdongg/pkmn-rom-parser/v6"
+	"github.com/dingdongg/pkmn-rom-parser/v6/data"
+	"github.com/dingdongg/pkmn-rom-parser/v6/rom_writer"
 )
 
 type StatResponse struct {
@@ -25,18 +25,6 @@ type StatResponse struct {
 	Spa uint `json:"spa"`
 	Spd uint `json:"spd"`
 	Spe uint `json:"spe"`
-}
-
-func (sr StatResponse) Compress(elemBits uint) uint {
-	var values = [6]uint{sr.Hp, sr.Atk, sr.Def, sr.Spe, sr.Spa, sr.Spd}
-
-	compressed := uint(0)
-	for i, s := range values {
-		val := s << (uint(i) * elemBits)
-		compressed |= val
-	}
-
-	return compressed
 }
 
 type PokemonResponse struct {
@@ -255,12 +243,12 @@ func UpdateSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		request.WriteBattleStats(p.BattleStats.Hp, p.BattleStats.Atk, p.BattleStats.Def, p.BattleStats.Spa, p.BattleStats.Spd, p.BattleStats.Spe)
-		request.WriteEV(p.EffortValues)
-		request.WriteIV(p.IndivValues)
+		request.WriteEV(p.EffortValues.Hp, p.EffortValues.Atk, p.EffortValues.Def, p.EffortValues.Spa, p.EffortValues.Spd, p.EffortValues.Spe)
+		request.WriteIV(p.IndivValues.Hp, p.IndivValues.Atk, p.IndivValues.Def, p.IndivValues.Spa, p.IndivValues.Spd, p.IndivValues.Spe)
 		request.WriteLevel(p.Level)
 		request.WriteNickname(p.Name)
-		// request.WriteAbility(p.Ability)
-		// request.WriteItem(p.HeldItem)
+		request.WriteAbility(p.Ability)
+		request.WriteItem(p.HeldItem)
 	}
 
 	res, err := ROMparser.Write(savefile, builder.Buffer)
