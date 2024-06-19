@@ -13,9 +13,9 @@ import (
 	"net/http"
 	"strconv"
 
-	ROMparser "github.com/dingdongg/pkmn-rom-parser/v6"
-	"github.com/dingdongg/pkmn-rom-parser/v6/data"
-	"github.com/dingdongg/pkmn-rom-parser/v6/rom_writer"
+	ROMparser "github.com/dingdongg/pkmn-rom-parser/v7"
+	"github.com/dingdongg/pkmn-rom-parser/v7/data"
+	"github.com/dingdongg/pkmn-rom-parser/v7/rom_writer"
 )
 
 type StatResponse struct {
