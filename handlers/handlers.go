@@ -68,6 +68,8 @@ func ReadSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("ReadSaveFileHandler()")
+
 	if err := r.ParseMultipartForm(1 << 19); err != nil {
 		fmt.Println("FILE TOO BIG TO PARSE: ", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -205,6 +207,8 @@ func UpdateSaveFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var yuh UpdateSavefilePayload
+
+	fmt.Println("UpdateSaveFileHandler()")
 
 	decoder := json.NewDecoder(r.Body)
 	decoder.Decode(&yuh)
